@@ -1,14 +1,10 @@
 const express = require("express");
 const app = express();
 
-//tells express to parse body as json
 app.use(express.json());
 
+let idCounter = 3;
 
-//counter for id
-let idCounter = 4;
-
-//temp array for movies
 const movieArray = [
     { id: 0, title: "Face/Off" },
     { id: 1, title: "USS Indianapolis: Men of Courage" },
@@ -16,30 +12,26 @@ const movieArray = [
     { id: 3, title: "Knowing" }
 ]
 
-//movies rest api
-//get
-app.get("/", (req, res) => {
-
-    res.send({ "msg": "Movies API, uses /movies" })
-})
-
 app.get("/movies", (req, res) => {
-
-    res.send({ "movies": movieArray });
+    res.send({data: movieArray});
 })
 
 app.get("/movies/:id", (req, res) => {
 
-    const movie = movieArray.find(movie => movie.id === Number(req.params.id));
-    movie ? res.send({ "movie": movie }) : res.status(404).send({ "error": "No match for id" });
+    const id = req.params.id;
+    const movie = movieArray.find(movie => movie.id === Number.parseInt(id));
+
+    if (movie) {
+        res.send({ "movie": movie })
+    } else {
+        res.send({ "error": "No match for id" })
+    }
 })
 
-//post
-app.post("/movies/", (req, res) => {
+app.post("/movies", (req, res) => {
 
-    const movie = { id: idCounter, title: req.body.title }
+    const movie = { id: ++idCounter, title: req.body.title }
     movieArray.push(movie);
-    idCounter++;
 
     res.send({ "movie posted": movie });
 })
@@ -65,12 +57,14 @@ app.patch("/movies/:id", (req, res) => {
 
     const index = movieArray.findIndex(movie => movie.id === Number(req.params.id));
 
-    if (req.body.title) {
-        movieArray[index].title = req.body.title;
+    if(index !== -1) {
+        const originalMovie = movieArray[index];
+        movieArray[index] = { ...originalMovie, ...req.body, id: Number(req.params.id)}
+        res.send({ "movie patch": movieArray[index] });
+    } else {
+        res.status(404).send({});
     }
-
-    res.send({ "movie patch": movieArray[index] });
-
+   
 })
 
 
@@ -88,6 +82,7 @@ app.delete("/movies/:id", (req, res) => {
     } 
 
 })
+
 
 
 const port = process.env.PORT || 8080;
